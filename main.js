@@ -24634,6 +24634,57 @@ function deriveModel(state) {
     shadowRadiusDeg: astro.penumbraRadiusDeg
   };
 }
+function findNextLocalEclipse(base, currentSimHours, startDate) {
+  let t = currentSimHours + 24;
+  for (let i = 0; i < 1e4; i++) {
+    let state = deriveSimulationState(base, t, startDate);
+    let rotationOffsetDeg = normalize180(state.earthRotation - state.gmst);
+    let astro = computeAstronomy(state.julianDay, state, rotationOffsetDeg);
+    let phase = astro.moonToSun;
+    if (phase < 0) phase += 360;
+    let hoursToNewMoon = (360 - phase) / (MOON_ECLIPTIC_DEG_PER_HOUR - SUN_ECLIPTIC_DEG_PER_HOUR);
+    t += hoursToNewMoon;
+    for (let j = 0; j < 3; j++) {
+      state = deriveSimulationState(base, t, startDate);
+      rotationOffsetDeg = normalize180(state.earthRotation - state.gmst);
+      astro = computeAstronomy(state.julianDay, state, rotationOffsetDeg);
+      t -= astro.moonToSun / (MOON_ECLIPTIC_DEG_PER_HOUR - SUN_ECLIPTIC_DEG_PER_HOUR);
+    }
+    state = deriveSimulationState(base, t, startDate);
+    rotationOffsetDeg = normalize180(state.earthRotation - state.gmst);
+    astro = computeAstronomy(state.julianDay, state, rotationOffsetDeg);
+    if (astro.depth > 0) {
+      let minDistance = Infinity;
+      let bestT = t;
+      let found = false;
+      for (let hour = -6; hour <= 6; hour += 0.1) {
+        const scanT = t + hour;
+        const scanState = deriveSimulationState(base, scanT, startDate);
+        const scanRotationOffsetDeg = normalize180(scanState.earthRotation - scanState.gmst);
+        const scanAstro = computeAstronomy(scanState.julianDay, scanState, scanRotationOffsetDeg);
+        const observerToShadowKm = greatCircleDistanceKm(
+          scanState.observerLat,
+          scanState.observerLon,
+          scanAstro.centralLat,
+          scanAstro.centralLon
+        );
+        const penumbraRadiusKm = 6371 * Math.max(0, scanAstro.penumbraRadiusDeg || 0) * DEG;
+        if (observerToShadowKm <= penumbraRadiusKm + 25) {
+          found = true;
+          if (observerToShadowKm < minDistance) {
+            minDistance = observerToShadowKm;
+            bestT = scanT;
+          }
+        }
+      }
+      if (found) {
+        return bestT;
+      }
+    }
+    t += 24;
+  }
+  return null;
+}
 function buildGroundTrack(julianDay, controls, rotationOffsetDeg) {
   const points = [];
   for (let hour = -6; hour <= 6.001; hour += 0.5) {
@@ -28125,6 +28176,24 @@ function App() {
               }
             )
           ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "button",
+            {
+              className: "btn",
+              type: "button",
+              style: { width: "100%", marginBottom: "0.65rem" },
+              onClick: () => {
+                const nextT = findNextLocalEclipse(params, simHours, startDate);
+                if (nextT !== null) {
+                  setSimHours(nextT);
+                  setIsPlaying(false);
+                } else {
+                  alert("\u0417\u0430\u0442\u043C\u0435\u043D\u0438\u0435 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E \u0432 \u0431\u043B\u0438\u0436\u0430\u0439\u0448\u0438\u0435 800 \u043B\u0435\u0442.");
+                }
+              },
+              children: "\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0435\u0435 \u0437\u0430\u0442\u043C\u0435\u043D\u0438\u0435 \u0432 \u044D\u0442\u043E\u0439 \u0442\u043E\u0447\u043A\u0435"
+            }
+          ),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", { className: "control-line", children: [
             /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "control-head", children: [
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "\u0421\u043A\u043E\u0440\u043E\u0441\u0442\u044C" }),

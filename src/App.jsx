@@ -5,6 +5,7 @@ import {
   clamp,
   deriveModel,
   deriveSimulationState,
+  findNextLocalEclipse,
   getRealParameters,
 } from './simulation.js';
 import { VIEWS } from './views.js';
@@ -202,6 +203,22 @@ export default function App() {
                 Реальные
               </button>
             </div>
+            <button
+              className="btn"
+              type="button"
+              style={{ width: '100%', marginBottom: '0.65rem' }}
+              onClick={() => {
+                const nextT = findNextLocalEclipse(params, simHours, startDate);
+                if (nextT !== null) {
+                  setSimHours(nextT);
+                  setIsPlaying(false);
+                } else {
+                  alert('Затмение не найдено в ближайшие 800 лет.');
+                }
+              }}
+            >
+              Следующее затмение в этой точке
+            </button>
 
             <label className="control-line">
               <div className="control-head">

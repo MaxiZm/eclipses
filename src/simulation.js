@@ -149,6 +149,76 @@ export function deriveModel(state) {
   };
 }
 
+export function findNextLocalEclipse(base, currentSimHours, startDate) {
+  let t = currentSimHours + 24; // Step forward a bit to avoid finding the current eclipse
+
+  for (let i = 0; i < 10000; i++) { // search up to ~800 years
+    let state = deriveSimulationState(base, t, startDate);
+    let rotationOffsetDeg = normalize180(state.earthRotation - state.gmst);
+    let astro = computeAstronomy(state.julianDay, state, rotationOffsetDeg);
+
+    // Find the next new moon
+    let phase = astro.moonToSun; // -180 to 180
+    if (phase < 0) phase += 360; // 0 to 360
+
+    // Hours until next new moon
+    let hoursToNewMoon = (360 - phase) / (MOON_ECLIPTIC_DEG_PER_HOUR - SUN_ECLIPTIC_DEG_PER_HOUR);
+    t += hoursToNewMoon;
+
+    // Refine the new moon time
+    for (let j = 0; j < 3; j++) {
+      state = deriveSimulationState(base, t, startDate);
+      rotationOffsetDeg = normalize180(state.earthRotation - state.gmst);
+      astro = computeAstronomy(state.julianDay, state, rotationOffsetDeg);
+      t -= astro.moonToSun / (MOON_ECLIPTIC_DEG_PER_HOUR - SUN_ECLIPTIC_DEG_PER_HOUR);
+    }
+
+    state = deriveSimulationState(base, t, startDate);
+    rotationOffsetDeg = normalize180(state.earthRotation - state.gmst);
+    astro = computeAstronomy(state.julianDay, state, rotationOffsetDeg);
+
+    // Check if there is a global eclipse
+    if (astro.depth > 0) {
+      // There is a global eclipse. Check if it's visible at the observer's location.
+      let minDistance = Infinity;
+      let bestT = t;
+      let found = false;
+
+      for (let hour = -6; hour <= 6; hour += 0.1) {
+        const scanT = t + hour;
+        const scanState = deriveSimulationState(base, scanT, startDate);
+        const scanRotationOffsetDeg = normalize180(scanState.earthRotation - scanState.gmst);
+        const scanAstro = computeAstronomy(scanState.julianDay, scanState, scanRotationOffsetDeg);
+
+        const observerToShadowKm = greatCircleDistanceKm(
+          scanState.observerLat,
+          scanState.observerLon,
+          scanAstro.centralLat,
+          scanAstro.centralLon,
+        );
+
+        const penumbraRadiusKm = 6371.0 * Math.max(0, scanAstro.penumbraRadiusDeg || 0) * DEG;
+        if (observerToShadowKm <= penumbraRadiusKm + 25) {
+          found = true;
+          if (observerToShadowKm < minDistance) {
+            minDistance = observerToShadowKm;
+            bestT = scanT;
+          }
+        }
+      }
+
+      if (found) {
+        return bestT;
+      }
+    }
+
+    // Step forward a bit to avoid finding the same new moon
+    t += 24;
+  }
+
+  return null; // Not found
+}
+
 function buildGroundTrack(julianDay, controls, rotationOffsetDeg) {
   const points = [];
   for (let hour = -6; hour <= 6.001; hour += 0.5) {
