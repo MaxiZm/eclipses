@@ -1,3 +1,5 @@
+const DEG = Math.PI / 180;
+
 const state = {
   ascendingNodeLon: 42,
   descendingNodeLon: 222,
@@ -502,4 +504,3 @@ function normalize180(angle) {
   return a;
 }
 
-const DEG = Math.PI / 180;
