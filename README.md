@@ -44,5 +44,9 @@ npm run preview
 - Триггер: `push` в `main` и ручной запуск.
 - Шаги:
   - `npm ci`;
-  - `npm run build -- --base=/<repo-name>/`;
+  - `npm run build -- --base=<auto base path from GitHub Pages>`;
   - публикация `dist` через GitHub Pages actions.
+
+Важно:
+- В `Settings -> Pages -> Build and deployment -> Source` должно быть выбрано `GitHub Actions`.
+- Если выбрано `Deploy from branch`, GitHub будет отдавать исходный `index.html` (с `/src/main.jsx`), и приложение не запустится.
