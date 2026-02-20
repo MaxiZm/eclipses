@@ -22,6 +22,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Ensure Pages uses GitHub Actions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --silent --show-error --fail-with-body \
+            --request PUT \
+            --url "https://api.github.com/repos/${{ github.repository }}/pages" \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data '{"build_type":"workflow","source":{"branch":"main","path":"/"}}'
+
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
