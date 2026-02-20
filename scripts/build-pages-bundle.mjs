@@ -8,6 +8,8 @@ await build({
   bundle: true,
   format: 'esm',
   target: ['es2020'],
+  jsx: 'automatic',
+  jsxImportSource: 'react',
   outfile: 'main.js',
   loader: {
     '.css': 'css',
