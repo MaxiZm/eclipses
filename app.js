@@ -1,3 +1,5 @@
+const DEG = Math.PI / 180;
+
 const state = {
   ascendingNodeLon: 42,
   descendingNodeLon: 222,
@@ -173,7 +175,7 @@ function render() {
   viewDescription.textContent = view.description;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#081120';
+  ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   view.draw(ctx, derived);
 
@@ -232,22 +234,22 @@ function drawMercator(ctx, m) {
   const w = width - pad * 2;
   const h = height - pad * 2;
 
-  ctx.strokeStyle = '#23436e';
+  ctx.strokeStyle = '#1a1a1a';
   ctx.lineWidth = 1;
   for (let lat = -60; lat <= 60; lat += 30) {
     const y = latToY(lat, pad, h);
-    line(ctx, pad, y, pad + w, y);
+    line(ctx, pad, y, pad + w, y, '#1a1a1a');
   }
   for (let lon = -180; lon <= 180; lon += 30) {
     const x = lonToX(lon, pad, w);
-    line(ctx, x, pad, x, pad + h);
+    line(ctx, x, pad, x, pad + h, '#1a1a1a');
   }
 
-  ctx.fillStyle = '#163966';
+  ctx.fillStyle = '#111';
   ctx.fillRect(pad, pad, w, h);
 
-  ctx.strokeStyle = '#78b2ff';
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
   for (let lon = -180; lon <= 180; lon += 2) {
     const lat = m.centralLat + Math.sin((lon + m.earthRotation) * DEG) * 12 * (1 - m.moonDistanceMode * 0.4);
@@ -260,12 +262,12 @@ function drawMercator(ctx, m) {
 
   const cx = lonToX(m.centralLon, pad, w);
   const cy = latToY(m.centralLat, pad, h);
-  ctx.fillStyle = `rgba(25,25,25,${0.25 + m.depth * 0.45})`;
+  ctx.fillStyle = `rgba(255,255,255,${0.03 + m.depth * 0.12})`;
   const rx = (m.shadowRadiusDeg / 180) * w;
   const ry = (m.shadowRadiusDeg / 140) * h;
   ellipse(ctx, cx, cy, rx, ry, true);
 
-  marker(ctx, cx, cy, '#ffd27d');
+  marker(ctx, cx, cy, '#fff');
 }
 
 function drawGlobe(ctx, m) {
@@ -274,13 +276,13 @@ function drawGlobe(ctx, m) {
   const cy = height * 0.53;
   const r = Math.min(width, height) * 0.36;
 
-  ctx.fillStyle = '#103257';
+  ctx.fillStyle = '#111';
   circle(ctx, cx, cy, r, true);
-  ctx.strokeStyle = '#7cb6ff';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 1;
   circle(ctx, cx, cy, r);
 
-  ctx.strokeStyle = '#2a4f7e';
+  ctx.strokeStyle = '#1e1e1e';
   for (let lat = -60; lat <= 60; lat += 30) {
     const rr = r * Math.cos(lat * DEG);
     ellipse(ctx, cx, cy, rr, r * 0.24);
@@ -289,19 +291,19 @@ function drawGlobe(ctx, m) {
   const rot = m.earthRotation * DEG;
   for (let lon = -120; lon <= 120; lon += 30) {
     const x = cx + Math.sin((lon * DEG) + rot) * r;
-    line(ctx, x, cy - r * 0.9, x, cy + r * 0.9, '#2a4f7e');
+    line(ctx, x, cy - r * 0.9, x, cy + r * 0.9, '#1e1e1e');
   }
 
   const p = sphereProject(m.centralLat, m.centralLon, r, cx, cy, m.observerTilt, m.earthRotation);
   if (p.visible) {
-    ctx.fillStyle = `rgba(20,20,20,${0.2 + m.depth * 0.5})`;
+    ctx.fillStyle = `rgba(255,255,255,${0.05 + m.depth * 0.15})`;
     circle(ctx, p.x, p.y, r * 0.12 + m.shadowRadiusDeg * 0.5, true);
-    marker(ctx, p.x, p.y, '#ffe089');
+    marker(ctx, p.x, p.y, '#fff');
   }
 
   const obs = sphereProject(m.observerLat, m.observerLon, r, cx, cy, m.observerTilt, m.earthRotation);
   if (obs.visible) {
-    marker(ctx, obs.x, obs.y, '#90ffce');
+    marker(ctx, obs.x, obs.y, '#888');
   }
 }
 
@@ -311,38 +313,40 @@ function drawEclipticPole(ctx, m) {
   const left = 120;
   const right = width - 120;
 
-  line(ctx, left, midY, right, midY, '#739bd2', 2);
+  line(ctx, left, midY, right, midY, '#333', 1);
   const nodeX = lerp(left, right, (m.ascendingNodeLon % 360) / 360);
-  line(ctx, nodeX, midY - 90, nodeX, midY + 90, '#95f2c2', 2);
+  line(ctx, nodeX, midY - 90, nodeX, midY + 90, '#555', 1);
 
   const sunX = lerp(left, right, (m.sunEclipticLon % 360) / 360);
   const moonX = lerp(left, right, ((m.moonEclipticLon % 360) + 360) / 360);
 
-  ctx.fillStyle = '#ffc96d';
+  ctx.fillStyle = '#fff';
   circle(ctx, sunX, midY, 16, true);
-  ctx.fillStyle = '#dce5f8';
+  ctx.fillStyle = '#888';
   circle(ctx, moonX, midY - m.moonNodePhase * 3, 12 + (1 - m.moonDistanceMode) * 5, true);
 
-  ctx.fillStyle = '#8eb9ff';
-  ctx.font = '16px Inter, sans-serif';
+  ctx.fillStyle = '#666';
+  ctx.font = '14px Inter, sans-serif';
   ctx.fillText('Эклиптика', left + 8, midY - 10);
+  ctx.fillStyle = '#aaa';
+  ctx.font = '14px Inter, sans-serif';
   ctx.fillText(`Глубина: ${(m.depth * 100).toFixed(1)}%`, left + 8, midY + 32);
 
   const barW = right - left;
-  ctx.fillStyle = '#1e2a45';
-  ctx.fillRect(left, height - 70, barW, 24);
-  ctx.fillStyle = '#7aa7ff';
-  ctx.fillRect(left, height - 70, barW * m.depth, 24);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(left, height - 70, barW, 20);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(left, height - 70, barW * m.depth, 20);
 }
 
 function drawObserver(ctx, m) {
   const { width, height } = ctx.canvas;
   const horizonY = height * 0.7;
-  line(ctx, 60, horizonY, width - 60, horizonY, '#6f95c8', 2);
+  line(ctx, 60, horizonY, width - 60, horizonY, '#333', 1);
 
   const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
-  skyGrad.addColorStop(0, '#1b2f53');
-  skyGrad.addColorStop(1, '#08142a');
+  skyGrad.addColorStop(0, '#080808');
+  skyGrad.addColorStop(1, '#000');
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, width, horizonY);
 
@@ -354,17 +358,17 @@ function drawObserver(ctx, m) {
   const sun = altAzToXY(azSun, altSun, width, horizonY);
   const moon = altAzToXY(azMoon, altMoon, width, horizonY);
 
-  ctx.fillStyle = '#ffcd70';
+  ctx.fillStyle = '#fff';
   circle(ctx, sun.x, sun.y, 18, true);
-  ctx.fillStyle = `rgba(35,35,45,${0.15 + m.depth * 0.8})`;
+  ctx.fillStyle = `rgba(80,80,80,${0.3 + m.depth * 0.6})`;
   circle(ctx, moon.x, moon.y, 15 + (1 - m.moonDistanceMode) * 4, true);
-  ctx.strokeStyle = '#a5c8ff';
+  ctx.strokeStyle = '#333';
   ctx.setLineDash([7, 6]);
-  line(ctx, sun.x, sun.y, moon.x, moon.y);
+  line(ctx, sun.x, sun.y, moon.x, moon.y, '#333');
   ctx.setLineDash([]);
 
-  ctx.fillStyle = '#8eb9ff';
-  ctx.font = '16px Inter, sans-serif';
+  ctx.fillStyle = '#777';
+  ctx.font = '14px Inter, sans-serif';
   ctx.fillText('Локальный горизонт наблюдателя', 70, horizonY + 30);
 }
 
@@ -374,21 +378,22 @@ function drawSunView(ctx, m) {
   const cy = height * 0.5;
   const r = Math.min(width, height) * 0.28;
 
-  ctx.fillStyle = '#183764';
+  ctx.fillStyle = '#111';
   circle(ctx, cx, cy, r, true);
-  ctx.strokeStyle = '#8ac1ff';
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
   circle(ctx, cx, cy, r);
 
   const x = cx + (m.centralLon / 180) * r;
   const y = cy - (m.centralLat / 90) * r;
   const rr = r * (m.shadowRadiusDeg / 55);
 
-  ctx.fillStyle = `rgba(15,15,18,${0.26 + m.depth * 0.55})`;
+  ctx.fillStyle = `rgba(255,255,255,${0.04 + m.depth * 0.14})`;
   circle(ctx, x, y, rr, true);
 
-  ctx.strokeStyle = 'rgba(150,200,255,0.5)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
   circle(ctx, x, y, rr * 1.85);
-  marker(ctx, x, y, '#ffef9e');
+  marker(ctx, x, y, '#fff');
 }
 
 function drawCrossSection(ctx, m) {
@@ -399,14 +404,17 @@ function drawCrossSection(ctx, m) {
   const moonX = width * 0.45;
   const earthX = width - 170;
 
-  ctx.fillStyle = '#ffc96d';
+  ctx.fillStyle = '#fff';
   circle(ctx, sunX, y, 58, true);
-  ctx.fillStyle = '#cbd3e7';
+  ctx.fillStyle = '#777';
   circle(ctx, moonX, y - m.moonNodePhase * 2.2, 26 + (1 - m.moonDistanceMode) * 6, true);
-  ctx.fillStyle = '#174474';
+  ctx.fillStyle = '#222';
   circle(ctx, earthX, y, 68, true);
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 1;
+  circle(ctx, earthX, y, 68);
 
-  ctx.fillStyle = 'rgba(20,20,20,0.38)';
+  ctx.fillStyle = `rgba(255,255,255,${0.03 + m.depth * 0.08})`;
   ctx.beginPath();
   ctx.moveTo(moonX + 18, y - 22 - m.moonNodePhase * 2.2);
   ctx.lineTo(earthX, y - 18 - m.depth * 36);
@@ -415,12 +423,12 @@ function drawCrossSection(ctx, m) {
   ctx.closePath();
   ctx.fill();
 
-  ctx.strokeStyle = '#9bc4ff';
-  line(ctx, sunX, y - 58, earthX + 80, y - 120);
-  line(ctx, sunX, y + 58, earthX + 80, y + 120);
+  ctx.strokeStyle = '#333';
+  line(ctx, sunX, y - 58, earthX + 80, y - 120, '#333');
+  line(ctx, sunX, y + 58, earthX + 80, y + 120, '#333');
 
-  ctx.fillStyle = '#97bdff';
-  ctx.font = '16px Inter, sans-serif';
+  ctx.fillStyle = '#777';
+  ctx.font = '14px Inter, sans-serif';
   ctx.fillText('Солнце', sunX - 30, y + 95);
   ctx.fillText('Луна', moonX - 20, y + 95);
   ctx.fillText('Земля', earthX - 22, y + 95);
@@ -466,7 +474,7 @@ function marker(ctx, x, y, color) {
   line(ctx, x, y - 8, x, y + 8, color, 2);
 }
 
-function line(ctx, x1, y1, x2, y2, color = '#355a8e', width = 1) {
+function line(ctx, x1, y1, x2, y2, color = '#222', width = 1) {
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
   ctx.beginPath();
@@ -502,4 +510,3 @@ function normalize180(angle) {
   return a;
 }
 
-const DEG = Math.PI / 180;
