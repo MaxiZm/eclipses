@@ -61,7 +61,11 @@ export default function App() {
       if (!frameRef.current) return;
       const rect = frameRef.current.getBoundingClientRect();
       const cssWidth = Math.max(260, Math.floor(rect.width));
-      const cssHeight = Math.max(220, Math.floor(rect.height));
+      const maxCssHeight = Math.max(
+        220,
+        Math.floor(window.visualViewport?.height ?? window.innerHeight),
+      );
+      const cssHeight = Math.min(maxCssHeight, Math.max(220, Math.floor(rect.height)));
       const dpr = window.devicePixelRatio || 1;
       setViewport({
         cssWidth,
