@@ -13,6 +13,7 @@ import { VIEWS } from './views.js';
 const SPEED_MIN = 1;
 const SPEED_MAX = 10000000;
 const SPEED_PRESETS = [1, 60, 3600, 86400, 604800, 10000000];
+const MIN_CANVAS_HEIGHT = 220;
 const EARTH_MODES = [
   { key: 'map', label: '2D КАРТА' },
   { key: 'globe', label: '3D ГЛОБУС' },
@@ -61,7 +62,12 @@ export default function App() {
       if (!frameRef.current) return;
       const rect = frameRef.current.getBoundingClientRect();
       const cssWidth = Math.max(260, Math.floor(rect.width));
-      const cssHeight = Math.max(220, Math.floor(rect.height));
+      const measuredHeight = Math.floor(rect.height);
+      const maxCssHeight = Math.max(
+        MIN_CANVAS_HEIGHT,
+        Math.floor(window.visualViewport?.height ?? window.innerHeight),
+      );
+      const cssHeight = Math.max(MIN_CANVAS_HEIGHT, Math.min(maxCssHeight, measuredHeight));
       const dpr = window.devicePixelRatio || 1;
       setViewport({
         cssWidth,
