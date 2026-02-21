@@ -14,6 +14,9 @@ const SPEED_MIN = 1;
 const SPEED_MAX = 10000000;
 const SPEED_PRESETS = [1, 60, 3600, 86400, 604800, 10000000];
 const MIN_CANVAS_HEIGHT = 220;
+const MOBILE_BREAKPOINT = 740;
+const MOBILE_MAX_CANVAS_VIEWPORT_RATIO = 0.62;
+const MOBILE_CANVAS_ASPECT = 16 / 9;
 const EARTH_MODES = [
   { key: 'map', label: '2D КАРТА' },
   { key: 'globe', label: '3D ГЛОБУС' },
@@ -63,18 +66,41 @@ export default function App() {
       const rect = frameRef.current.getBoundingClientRect();
       const cssWidth = Math.max(260, Math.floor(rect.width));
       const measuredHeight = Math.floor(rect.height);
-      const maxCssHeight = Math.max(
-        MIN_CANVAS_HEIGHT,
-        Math.floor(window.visualViewport?.height ?? window.innerHeight),
-      );
+      const viewportHeight = Math.floor(window.visualViewport?.height ?? window.innerHeight);
+      const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+      const safeViewportHeight = Math.max(MIN_CANVAS_HEIGHT, viewportHeight - 24);
+      let maxCssHeight = safeViewportHeight;
+
+      if (isMobile) {
+        const maxByViewport = Math.floor(viewportHeight * MOBILE_MAX_CANVAS_VIEWPORT_RATIO);
+        const maxByAspect = Math.floor(cssWidth / MOBILE_CANVAS_ASPECT);
+        maxCssHeight = Math.max(
+          MIN_CANVAS_HEIGHT,
+          Math.min(safeViewportHeight, maxByViewport, maxByAspect),
+        );
+      }
+
       const cssHeight = Math.max(MIN_CANVAS_HEIGHT, Math.min(maxCssHeight, measuredHeight));
       const dpr = window.devicePixelRatio || 1;
-      setViewport({
+      const nextViewport = {
         cssWidth,
         cssHeight,
         pixelWidth: Math.round(cssWidth * dpr),
         pixelHeight: Math.round(cssHeight * dpr),
         dpr,
+      };
+
+      setViewport((current) => {
+        if (
+          current.cssWidth === nextViewport.cssWidth &&
+          current.cssHeight === nextViewport.cssHeight &&
+          current.pixelWidth === nextViewport.pixelWidth &&
+          current.pixelHeight === nextViewport.pixelHeight &&
+          current.dpr === nextViewport.dpr
+        ) {
+          return current;
+        }
+        return nextViewport;
       });
     };
 
@@ -82,9 +108,11 @@ export default function App() {
     const observer = new ResizeObserver(updateViewport);
     observer.observe(frameRef.current);
     window.addEventListener('resize', updateViewport);
+    window.visualViewport?.addEventListener('resize', updateViewport);
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', updateViewport);
+      window.visualViewport?.removeEventListener('resize', updateViewport);
     };
   }, []);
 

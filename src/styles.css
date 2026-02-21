@@ -380,6 +380,7 @@ input[type='datetime-local'] {
 
 .canvas-frame {
   position: relative;
+  width: 100%;
   min-height: 0;
   border: 1px solid #222;
   border-radius: 12px;
@@ -454,6 +455,7 @@ input[type='datetime-local'] {
   .app-shell {
     height: auto;
     min-height: 100vh;
+    min-height: 100svh;
   }
 
   .workspace {
@@ -463,9 +465,18 @@ input[type='datetime-local'] {
   .controls-panel {
     max-height: none;
   }
-  
+
   .stage-panel {
-    min-height: 60vh;
+    min-height: 0;
+    grid-template-rows: auto auto auto;
+  }
+
+  .canvas-frame {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    min-height: 220px;
+    max-height: 62vh;
+    max-height: 62svh;
   }
 }
 
@@ -484,13 +495,9 @@ input[type='datetime-local'] {
     flex-direction: column;
     align-items: flex-start;
   }
-  
-  .workspace {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .stage-panel {
-    min-height: 50vh;
+
+  .canvas-frame {
+    max-height: 56vh;
+    max-height: 56svh;
   }
 }
