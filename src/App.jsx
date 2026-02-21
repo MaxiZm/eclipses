@@ -108,8 +108,6 @@ export default function App() {
     const canvas = canvasRef.current;
     canvas.width = viewport.pixelWidth;
     canvas.height = viewport.pixelHeight;
-    canvas.style.width = `${viewport.cssWidth}px`;
-    canvas.style.height = `${viewport.cssHeight}px`;
 
     const context = canvas.getContext('2d');
     if (!context) return;
