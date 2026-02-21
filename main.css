@@ -438,9 +438,9 @@ input[type=datetime-local] {
   }
   .workspace {
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
   }
   .stage-panel {
-    min-height: 60vh;
+    min-height: 50vh;
   }
 }
